@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { FeedItem } from '../models/FeedItem';
 import { requireAuth } from '../../users/routes/auth.router';
 import * as AWS from '../../../../aws';
+import {filterImageFromURL, deleteLocalFiles} from '../../../../util/util';
 
 const router: Router = Router();
 
@@ -16,10 +17,27 @@ router.get('/', async (req: Request, res: Response) => {
     res.send(items);
 });
 
+router.get("/filteredimage/",
+    async (req: Request, res: Response) => {
+        console.log("helooooooo");
+    let {image_url} = req.query;
+    
+    //validate image_url
+    if(!image_url || image_url.length == 0){
+    return res.status(400).send("Please provide a url to search for");
+    }
+    let filteredpath = await filterImageFromURL(image_url).catch((error )=> { return null; });
+    if(!filteredpath){
+    return res.status(400).send("URL is not valid or not public");
+    }
+    res.status(200).sendFile(filteredpath);
+    res.on('finish', ()=> { deleteLocalFiles([filteredpath]) });
+});
+
 //@TODO
 //Add an endpoint to GET a specific resource by Primary Key
 router.get('/:id', async (req: Request, res: Response) => {
-
+    console.log("hitting here 1");
     let { id } = req.params;
     if(!id){
         return res.status(404).send({message: "Id must be specified"});
@@ -33,6 +51,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.patch('/:id', 
     requireAuth, 
     async (req: Request, res: Response) => {
+        console.log("hitting here 2");
         const caption = req.body.caption;
         const url = req.body.url;
         const {id} = req.params;
@@ -54,6 +73,8 @@ router.patch('/:id',
         
         res.send(500).send("not implemented");
 });
+
+
 
 
 // Get a signed url to put a new item in the bucket

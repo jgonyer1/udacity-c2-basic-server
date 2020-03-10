@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Router, Request, Response } from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
@@ -28,6 +28,22 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
 
   /**************************************************************************** */
+
+  app.get("/filteredimage/", 
+    async (req: Request, res: Response) => {
+    let {image_url} = req.query;
+    
+    //validate image_url
+    if(!image_url || image_url.length == 0){
+      return res.status(400).send("Please provide a url to search for");
+    }
+    let filteredpath = await filterImageFromURL(image_url).catch((error )=> { return null; });
+    if(!filteredpath){
+      return res.status(400).send("URL is not valid or not public");
+    }
+    res.status(200).sendFile(filteredpath);
+    res.on('finish', ()=> { deleteLocalFiles([filteredpath]) });
+  });
 
   //! END @TODO1
   

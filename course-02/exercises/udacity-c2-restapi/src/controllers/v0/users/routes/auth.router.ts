@@ -99,14 +99,16 @@ router.post('/', async (req: Request, res: Response) => {
     if (!plainTextPassword) {
         return res.status(400).send({ auth: false, message: 'Password is required' });
     }
-
+    
     // find the user
     const user = await User.findByPk(email);
+    
     // check that user doesnt exists
     if(user) {
+        console.log("SENDING ERROR");
         return res.status(422).send({ auth: false, message: 'User may already exist' });
     }
-
+    
     const password_hash = await generatePassword(plainTextPassword);
 
     const newUser = await new User({
@@ -120,9 +122,11 @@ router.post('/', async (req: Request, res: Response) => {
     } catch (e) {
         throw e;
     }
-
+    let leanUserObj = savedUser.toJSON();
+    
     // Generate JWT
-    const jwt = generateJWT(savedUser);
+    // const jwt = generateJWT(savedUser);
+    const jwt = generateJWT(leanUserObj);
 
     res.status(201).send({token: jwt, user: savedUser.short()});
 });
